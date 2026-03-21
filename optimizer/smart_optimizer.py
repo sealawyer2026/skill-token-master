@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""智能优化器 - 基于分析结果执行多维度优化"""
+"""智能优化器 v2.1 - 增强版，提升压缩率"""
 
 import re
 import json
@@ -8,10 +8,34 @@ from typing import Dict, List, Any
 
 
 class SmartOptimizer:
-    """智能优化器 - 执行实际的Token优化操作"""
+    """智能优化器 - 执行实际的Token优化操作 (v2.1 增强版)"""
     
     def __init__(self):
         self.optimization_log = []
+        # v2.1 新增：更全面的优化规则
+        self.prompt_rules = [
+            # 程度副词
+            (r'非常|特别|十分|极其|格外', ''),
+            # 客套用语
+            (r'请你|请确保|请保证|请仔细|请认真', ''),
+            (r'^请', '', re.MULTILINE),
+            # 修饰词
+            (r'详细地|仔细地|认真地|全面地|深入地', ''),
+            # 概念词简化
+            (r'非常重要的|特别重要的', '关键'),
+            (r'重要的|关键的|核心的', '核心'),
+            (r'是不是|能否|可不可以', '是否'),
+            (r'以及|还有|并且', '和'),
+            # 冗余短语
+            (r'所有的|全部的', '所有'),
+            (r'每一个|每一处', '每个'),
+            (r'进行一个|做一个', '进行'),
+            (r'完成一个', '完成'),
+            # 重复词汇
+            (r'分析分析|研究研究|看看', '分析'),
+            (r'考虑一下|想一想', '考虑'),
+            (r'处理一下|弄一下', '处理'),
+        ]
     
     def optimize(self, target_path: str, analysis: Dict, patterns: List, auto_fix: bool) -> Dict[str, Any]:
         """执行优化"""
@@ -61,44 +85,67 @@ class SmartOptimizer:
         return result
     
     def _optimize_prompt(self, content: str, patterns: List) -> str:
-        """优化提示词"""
-        original = content
+        """优化提示词 - v2.1 增强版"""
+        # v2.1: 按顺序应用所有规则
+        for rule in self.prompt_rules:
+            if len(rule) == 3:
+                pattern, repl, flags = rule
+                content = re.sub(pattern, repl, content, flags=flags)
+            else:
+                pattern, repl = rule
+                content = re.sub(pattern, repl, content)
         
-        # 1. 移除冗余程度副词
-        content = re.sub(r'非常|特别|十分|极其', '', content)
-        
-        # 2. 简化客套用语
-        content = re.sub(r'请你|请确保|请保证', '', content)
-        content = re.sub(r'^请', '', content, flags=re.MULTILINE)
-        
-        # 3. 简化修饰词
-        content = re.sub(r'详细地|仔细地|认真地', '', content)
-        
-        # 4. 简化概念词
-        content = re.sub(r'非常重要的|特别重要的', '关键', content)
-        content = re.sub(r'重要的|关键的|核心的', '核心', content)
-        
-        # 5. 压缩列表格式
+        # 压缩列表格式
         content = re.sub(r'^[•\-\*]\s+', '- ', content, flags=re.MULTILINE)
         
-        # 6. 合并连续空行
+        # 合并连续空行
         content = re.sub(r'\n{3,}', '\n\n', content)
         
-        # 7. 移除行尾空格
+        # 移除行尾空格
         content = '\n'.join(line.rstrip() for line in content.split('\n'))
+        
+        # v2.1: 检测并简化重复句子
+        sentences = re.split(r'[。！？]', content)
+        unique_sentences = []
+        seen = set()
+        for s in sentences:
+            s = s.strip()
+            if s and s not in seen:
+                unique_sentences.append(s)
+                seen.add(s)
+        
+        if len(unique_sentences) < len(sentences):
+            content = '。'.join(unique_sentences)
         
         return content.strip()
     
     def _optimize_code(self, content: str, patterns: List) -> str:
-        """优化代码"""
+        """优化代码 - v2.1 增强版"""
         lines = content.split('\n')
         optimized_lines = []
         
         prev_blank = False
+        in_multiline_string = False
+        
         for line in lines:
             stripped = line.rstrip()
             
-            # 跳过连续空行
+            # v2.1 fix: 更准确地检测多行字符串
+            triple_double = stripped.count('"""')
+            triple_single = stripped.count("'''")
+            
+            # 如果行内有奇数个"""或'''，则切换状态
+            if triple_double % 2 == 1 or triple_single % 2 == 1:
+                in_multiline_string = not in_multiline_string
+                if in_multiline_string:
+                    continue  # 进入文档字符串，跳过开始行
+                else:
+                    continue  # 退出文档字符串，跳过结束行
+            
+            if in_multiline_string:
+                continue  # 在文档字符串内部，跳过
+            
+            # 跳过连续空行 (最多保留1个)
             if not stripped:
                 if not prev_blank:
                     optimized_lines.append('')
@@ -106,19 +153,41 @@ class SmartOptimizer:
                 continue
             prev_blank = False
             
-            # 移除行尾注释（保留行内注释）
-            if stripped.startswith('#') and not stripped.startswith('#!'):
-                continue
+            # v2.1 fix: 移除所有注释行（包括有缩进的）
+            # 使用 lstrip 移除前导空格后检查
+            content_stripped = stripped.lstrip()
+            if content_stripped.startswith('#'):
+                # 检查是否是 shebang 或编码声明
+                if not any(content_stripped.startswith(x) for x in ['#!/', '# -*-']):
+                    continue
             
-            optimized_lines.append(stripped)
+            # v2.1: 简化空格
+            # 将多个空格替换为单个（保留缩进）
+            indent = len(line) - len(line.lstrip())
+            content_part = line.lstrip()
+            # 简化中间的空格
+            content_part = re.sub(r'\s+', ' ', content_part)
+            line = ' ' * indent + content_part
+            
+            optimized_lines.append(line.rstrip())
         
         content = '\n'.join(optimized_lines)
         
+        # v2.1: 更多代码简化
+        # 简化 return None
+        content = re.sub(r'return\s+None\s*$', 'return', content, flags=re.MULTILINE)
+        # 简化 if x == True: → if x:
+        content = re.sub(r'if\s+(\w+)\s*==\s*True\s*:', r'if \1:', content)
+        # 简化 if x == False: → if not x:
+        content = re.sub(r'if\s+(\w+)\s*==\s*False\s*:', r'if not \1:', content)
+        # 简化列表/字典的空格
+        content = re.sub(r'\[\s+', '[', content)
+        content = re.sub(r'\s+\]', ']', content)
+        content = re.sub(r'\{\s+', '{', content)
+        content = re.sub(r'\s+\}', '}', content)
+        
         # 合并连续空行
         content = re.sub(r'\n{3,}', '\n\n', content)
-        
-        # 简化简单表达式
-        content = re.sub(r'return None', 'return', content)
         
         return content.strip() + '\n'
     
