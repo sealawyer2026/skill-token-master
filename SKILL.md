@@ -1,7 +1,7 @@
 # Token经济大师 (Token Economy Master)
 
 **名称**: `token-economy-master`  
-**版本**: 2.2.0  
+**版本**: 2.5.0  
 **类型**: Meta-Skill / 智能优化器  
 **作者**: 白泽
 
