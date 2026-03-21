@@ -8,7 +8,7 @@ from typing import Dict, List, Any
 
 
 class SmartOptimizer:
-    """智能优化器 - 执行实际的Token优化操作 (v2.5 性能优化版)"""
+    """智能优化器 - 执行实际的Token优化操作 (v2.6 激进优化版)"""
     
     def __init__(self):
         self.optimization_log = []
@@ -55,6 +55,27 @@ class SmartOptimizer:
             (r'看看|看看看|看看一下', '看'),
             (r'试试|尝试一下', '试'),
             (r'讨论讨论|商议商议', '讨论'),
+            # v2.6 激进优化：单字替换
+            (r'因为|由于|鉴于', '因'),
+            (r'所以|因此|于是', '故'),
+            (r'但是|然而|可是', '但'),
+            (r'如果|假如|若是', '若'),
+            (r'必须|务必|一定', '须'),
+            (r'可以|能够|可能', '可'),
+            (r'需要|要求|需求', '需'),
+            (r'应该|应当|应', '应'),
+            (r'已经|已然|业已', '已'),
+            (r'正在|现在|当前', '正'),
+            (r'将要|快要|即将', '将'),
+            (r'完成|结束|完结', '毕'),
+            (r'开始|着手|启动', '始'),
+            (r'结果|结局|成果', '果'),
+            (r'问题|疑问|难题', '题'),
+            (r'方法|方式|办法', '法'),
+            (r'情况|情形|状况', '况'),
+            (r'内容|内含|包含', '容'),
+            (r'信息|消息|资讯', '息'),
+            (r'数据|资料|材料', '数'),
         ]
         # v2.5: 预编译所有正则表达式
         self._compiled_rules = []
@@ -163,6 +184,12 @@ class SmartOptimizer:
         content = re.sub(r'。\s*。', '。', content)
         content = re.sub(r'，\s*。', '。', content)
         
+        # v2.6: 激进优化 - 删除填充词
+        content = re.sub(r'\s*的\s*', '的', content)
+        content = re.sub(r'\s*了\s*', '了', content)
+        content = re.sub(r'\s*是\s*', '是', content)
+        content = re.sub(r'\s*有\s*', '有', content)
+        
         result = content.strip()
         
         # v2.5: 存入缓存（限制缓存大小）
@@ -222,6 +249,13 @@ class SmartOptimizer:
             content_part = re.sub(r'\{\s+', '{', content_part)
             content_part = re.sub(r'\s+\}', '}', content_part)
             content_part = re.sub(r',\s+', ',', content_part)
+            
+            # v2.6 激进代码优化
+            content_part = re.sub(r'len\((\w+)\)\s*>\s*0', r'\1', content_part)
+            content_part = re.sub(r'len\((\w+)\)\s*==\s*0', r'not \1', content_part)
+            content_part = re.sub(r'not\s+not\s+', '', content_part)  # 双重否定
+            content_part = re.sub(r'if\s+(\w+)\s*:\s*\n\s*return\s+True\s*\n\s*return\s+False', r'return bool(\1)', content_part)
+            content_part = re.sub(r'if\s+(\w+)\s*:\s*\n\s*return\s+False\s*\n\s*return\s+True', r'return not \1', content_part)
             
             line = ' ' * indent + content_part
             optimized_lines.append(line.rstrip())
