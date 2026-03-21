@@ -12,26 +12,19 @@ class SmartOptimizer:
     
     def __init__(self):
         self.optimization_log = []
-        # v2.1 新增：更全面的优化规则
         self.prompt_rules = [
-            # 程度副词
             (r'非常|特别|十分|极其|格外', ''),
-            # 客套用语
             (r'请你|请确保|请保证|请仔细|请认真', ''),
             (r'^请', '', re.MULTILINE),
-            # 修饰词
             (r'详细地|仔细地|认真地|全面地|深入地', ''),
-            # 概念词简化
             (r'非常重要的|特别重要的', '关键'),
             (r'重要的|关键的|核心的', '核心'),
             (r'是不是|能否|可不可以', '是否'),
             (r'以及|还有|并且', '和'),
-            # 冗余短语
             (r'所有的|全部的', '所有'),
             (r'每一个|每一处', '每个'),
             (r'进行一个|做一个', '进行'),
             (r'完成一个', '完成'),
-            # 重复词汇
             (r'分析分析|研究研究|看看', '分析'),
             (r'考虑一下|想一想', '考虑'),
             (r'处理一下|弄一下', '处理'),
@@ -86,7 +79,6 @@ class SmartOptimizer:
     
     def _optimize_prompt(self, content: str, patterns: List) -> str:
         """优化提示词 - v2.1 增强版"""
-        # v2.1: 按顺序应用所有规则
         for rule in self.prompt_rules:
             if len(rule) == 3:
                 pattern, repl, flags = rule
@@ -95,16 +87,10 @@ class SmartOptimizer:
                 pattern, repl = rule
                 content = re.sub(pattern, repl, content)
         
-        # 压缩列表格式
         content = re.sub(r'^[•\-\*]\s+', '- ', content, flags=re.MULTILINE)
-        
-        # 合并连续空行
         content = re.sub(r'\n{3,}', '\n\n', content)
-        
-        # 移除行尾空格
         content = '\n'.join(line.rstrip() for line in content.split('\n'))
         
-        # v2.1: 检测并简化重复句子
         sentences = re.split(r'[。！？]', content)
         unique_sentences = []
         seen = set()
@@ -130,22 +116,19 @@ class SmartOptimizer:
         for line in lines:
             stripped = line.rstrip()
             
-            # v2.1 fix: 更准确地检测多行字符串
             triple_double = stripped.count('"""')
             triple_single = stripped.count("'''")
             
-            # 如果行内有奇数个"""或'''，则切换状态
             if triple_double % 2 == 1 or triple_single % 2 == 1:
                 in_multiline_string = not in_multiline_string
                 if in_multiline_string:
-                    continue  # 进入文档字符串，跳过开始行
+                    continue
                 else:
-                    continue  # 退出文档字符串，跳过结束行
+                    continue
             
             if in_multiline_string:
-                continue  # 在文档字符串内部，跳过
+                continue
             
-            # 跳过连续空行 (最多保留1个)
             if not stripped:
                 if not prev_blank:
                     optimized_lines.append('')
@@ -153,19 +136,13 @@ class SmartOptimizer:
                 continue
             prev_blank = False
             
-            # v2.1 fix: 移除所有注释行（包括有缩进的）
-            # 使用 lstrip 移除前导空格后检查
             content_stripped = stripped.lstrip()
             if content_stripped.startswith('#'):
-                # 检查是否是 shebang 或编码声明
                 if not any(content_stripped.startswith(x) for x in ['#!/', '# -*-']):
                     continue
             
-            # v2.1: 简化空格
-            # 将多个空格替换为单个（保留缩进）
             indent = len(line) - len(line.lstrip())
             content_part = line.lstrip()
-            # 简化中间的空格
             content_part = re.sub(r'\s+', ' ', content_part)
             line = ' ' * indent + content_part
             
@@ -173,20 +150,13 @@ class SmartOptimizer:
         
         content = '\n'.join(optimized_lines)
         
-        # v2.1: 更多代码简化
-        # 简化 return None
         content = re.sub(r'return\s+None\s*$', 'return', content, flags=re.MULTILINE)
-        # 简化 if x == True: → if x:
         content = re.sub(r'if\s+(\w+)\s*==\s*True\s*:', r'if \1:', content)
-        # 简化 if x == False: → if not x:
         content = re.sub(r'if\s+(\w+)\s*==\s*False\s*:', r'if not \1:', content)
-        # 简化列表/字典的空格
         content = re.sub(r'\[\s+', '[', content)
         content = re.sub(r'\s+\]', ']', content)
         content = re.sub(r'\{\s+', '{', content)
         content = re.sub(r'\s+\}', '}', content)
-        
-        # 合并连续空行
         content = re.sub(r'\n{3,}', '\n\n', content)
         
         return content.strip() + '\n'
@@ -198,15 +168,12 @@ class SmartOptimizer:
         except:
             return content
         
-        # 启用所有步骤的缓存
         if 'steps' in data:
             for step in data['steps']:
                 step['cache'] = True
-                # 如果没有依赖，标记为可并行
                 if 'depends_on' not in step or not step['depends_on']:
                     step['parallel'] = True
         
-        # 压缩JSON（移除多余空格）
         return json.dumps(data, separators=(',', ':'), ensure_ascii=False)
     
     def _optimize_directory(self, path: Path, analysis: Dict, patterns: List, auto_fix: bool) -> Dict[str, Any]:
@@ -218,7 +185,6 @@ class SmartOptimizer:
         for file_path in path.rglob('*'):
             if file_path.is_file():
                 try:
-                    # 重新分析每个文件
                     from analyzer.unified_analyzer import UnifiedAnalyzer
                     analyzer = UnifiedAnalyzer()
                     file_analysis = analyzer._analyze_file(file_path)

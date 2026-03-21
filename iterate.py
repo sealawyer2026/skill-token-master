@@ -1,15 +1,10 @@
 #!/usr/bin/env python3
-"""
-Token经济大师 v2.1 - 迭代优化脚本
-进行多轮自我迭代，持续提升质量
-"""
 
 import sys
 import subprocess
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).parent))
-
 
 def run_tests():
     """运行测试套件"""
@@ -20,7 +15,6 @@ def run_tests():
     )
     return result.returncode == 0
 
-
 def run_evaluation():
     """运行深度评测"""
     result = subprocess.run(
@@ -29,7 +23,6 @@ def run_evaluation():
         text=True
     )
     return result.returncode == 0
-
 
 def count_tokens():
     """统计代码Token数"""
@@ -42,42 +35,38 @@ def count_tokens():
             total += int(chinese / 2 + english / 4)
     return total
 
-
 def iterate():
     """执行迭代优化"""
     print("="*60)
     print("🔄 Token经济大师 - 迭代优化")
     print("="*60)
-    
+
     initial_tokens = count_tokens()
     print(f"\n初始代码Token数: {initial_tokens}")
-    
-    # 基础测试
+
     print("\n1️⃣ 运行基础测试...")
     if run_tests():
-        print("   ✅ 基础测试通过")
+        print(" ✅ 基础测试通过")
     else:
-        print("   ❌ 基础测试失败")
+        print(" ❌ 基础测试失败")
         return False
-    
-    # 深度评测
+
     print("\n2️⃣ 运行深度评测...")
     if run_evaluation():
-        print("   ✅ 深度评测通过")
+        print(" ✅ 深度评测通过")
     else:
-        print("   ❌ 深度评测失败")
+        print(" ❌ 深度评测失败")
         return False
-    
+
     final_tokens = count_tokens()
     print(f"\n最终代码Token数: {final_tokens}")
     print(f"优化节省: {initial_tokens - final_tokens} tokens ({(initial_tokens - final_tokens)/initial_tokens*100:.1f}%)")
-    
+
     print("\n" + "="*60)
     print("✅ 迭代优化完成，质量达标！")
     print("="*60)
-    
-    return True
 
+    return True
 
 if __name__ == '__main__':
     success = iterate()

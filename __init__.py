@@ -8,9 +8,7 @@ from .monitor.intelligent_monitor import IntelligentMonitor
 __version__ = "2.0.0"
 __author__ = "白泽"
 
-__all__ = [
-    'UnifiedAnalyzer',
-    'SmartOptimizer', 
+__all__ = ['UnifiedAnalyzer',
+    'SmartOptimizer',
     'EvolutionEngine',
-    'IntelligentMonitor'
-]
+    'IntelligentMonitor']
