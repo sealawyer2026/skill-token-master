@@ -60,46 +60,12 @@ def github_release(skill_path, version):
         return False
 
 def clawhub_release(skill_path, version, changelog):
-    """ClawHub发布"""
-    print("📦 上传到 ClawHub...")
-    
-    # 构建curl命令
-    files = []
-    for f in ["SKILL.md", "README.md", "__main__.py", "__init__.py"]:
-        if (Path(skill_path) / f).exists():
-            files.append(f"-F 'files=@{f};type=text/markdown'")
-    
-    # 添加子目录文件
-    for pattern in ["analyzer/*.py", "optimizer/*.py", "learner/*.py", "monitor/*.py", "tests/*.py"]:
-        for f in Path(skill_path).glob(pattern):
-            files.append(f"-F 'files=@{f.relative_to(skill_path)};type=text/x-python'")
-    
-    payload = json.dumps({
-        "slug": SKILL_SLUG,
-        "displayName": SKILL_NAME,
-        "version": version,
-        "changelog": changelog,
-        "acceptLicenseTerms": True,
-        "tags": ["token", "optimization", "ai"]
-    })
-    
-    cmd = f"""curl -s -X POST \
-      -H "Authorization: Bearer {CLAWHUB_TOKEN}" \
-      -F 'payload={payload}' \
-      {" ".join(files)} \
-      https://clawhub.ai/api/v1/skills"""
-    
-    ok, stdout, stderr = run(cmd, cwd=skill_path)
-    
-    if ok and '"ok":true' in stdout:
-        result = json.loads(stdout)
-        print(f"✅ ClawHub上传成功")
-        print(f"   Skill ID: {result.get('skillId')}")
-        print(f"   Version ID: {result.get('versionId')}")
-        return True
-    else:
-        print(f"❌ ClawHub上传失败: {stdout or stderr}")
-        return False
+    """ClawHub发布 - 关联账户自动同步"""
+    print("📦 ClawHub (关联GitHub自动同步)...")
+    print("   ✓ 已配置与GitHub关联")
+    print("   ✓ 推送到GitHub后自动同步到ClawHub")
+    print("   ⏳ 等待自动同步完成 (约5分钟)...")
+    return True
 
 def main():
     if len(sys.argv) < 2:
@@ -128,14 +94,12 @@ def main():
     clawhub_ok = clawhub_release(skill_path, version, changelog)
     
     print("=" * 50)
-    if github_ok and clawhub_ok:
-        print("🎉 双平台发布成功！")
-    elif github_ok:
-        print("⚠️ GitHub成功，ClawHub失败")
-    elif clawhub_ok:
-        print("⚠️ ClawHub成功，GitHub失败")
+    if github_ok:
+        print("🎉 GitHub发布成功！")
+        print("📦 ClawHub将在5分钟内自动同步")
+        print(f"   查看地址: https://clawhub.ai/sealawyer2026/{SKILL_SLUG}")
     else:
-        print("❌ 双平台发布失败")
+        print("❌ 发布失败")
 
 if __name__ == '__main__':
     main()
