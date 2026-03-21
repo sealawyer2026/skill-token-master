@@ -12,22 +12,44 @@ class SmartOptimizer:
     
     def __init__(self):
         self.optimization_log = []
+        # v2.2 增强：更多优化规则
         self.prompt_rules = [
-            (r'非常|特别|十分|极其|格外', ''),
-            (r'请你|请确保|请保证|请仔细|请认真', ''),
+            # 程度副词
+            (r'非常|特别|十分|极其|格外|相当|比较', ''),
+            # 客套用语
+            (r'请你|请确保|请保证|请仔细|请认真|请帮忙', ''),
             (r'^请', '', re.MULTILINE),
-            (r'详细地|仔细地|认真地|全面地|深入地', ''),
+            # 修饰词
+            (r'详细地|仔细地|认真地|全面地|深入地|充分地', ''),
+            (r'彻底地|完全地|绝对地|务必', ''),
+            # 概念词简化
             (r'非常重要的|特别重要的', '关键'),
             (r'重要的|关键的|核心的', '核心'),
-            (r'是不是|能否|可不可以', '是否'),
-            (r'以及|还有|并且', '和'),
-            (r'所有的|全部的', '所有'),
-            (r'每一个|每一处', '每个'),
-            (r'进行一个|做一个', '进行'),
+            (r'基本上的|大致上的', '基本'),
+            (r'进行一个|做一个|搞一个', '进行'),
             (r'完成一个', '完成'),
-            (r'分析分析|研究研究|看看', '分析'),
-            (r'考虑一下|想一想', '考虑'),
-            (r'处理一下|弄一下', '处理'),
+            (r'分析分析|研究研究|看看|想想', '分析'),
+            (r'考虑一下|想一想|琢磨一下', '考虑'),
+            (r'处理一下|弄一下|搞一下', '处理'),
+            (r'检查一下|核查一下|确认一下', '检查'),
+            # 连接词简化
+            (r'是不是|能否|可不可以|是否可以', '是否'),
+            (r'以及|还有|并且|再加上', '和'),
+            (r'此外|另外|除此之外|除此以外', '此外'),
+            (r'因此|所以|因而|于是', '因此'),
+            (r'然而|但是|不过|可是', '但'),
+            # 数量词简化
+            (r'所有的|全部的|整个的', '所有'),
+            (r'每一个|每一处|各个', '各'),
+            (r'一些|若干|部分', '部分'),
+            # 时间词简化
+            (r'立即|马上|立刻|赶紧', '立即'),
+            (r'首先|第一|最开始', '先'),
+            (r'最后|最终|末了', '最后'),
+            # 重复动词
+            (r'看看|看看看|看看一下', '看'),
+            (r'试试|尝试一下', '试'),
+            (r'讨论讨论|商议商议', '讨论'),
         ]
     
     def optimize(self, target_path: str, analysis: Dict, patterns: List, auto_fix: bool) -> Dict[str, Any]:
@@ -106,29 +128,29 @@ class SmartOptimizer:
         return content.strip()
     
     def _optimize_code(self, content: str, patterns: List) -> str:
-        """优化代码 - v2.1 增强版"""
+        """优化代码 - v2.2 增强版"""
         lines = content.split('\n')
         optimized_lines = []
         
         prev_blank = False
         in_multiline_string = False
+        indent_stack = []
         
         for line in lines:
             stripped = line.rstrip()
             
+            # 检测多行字符串
             triple_double = stripped.count('"""')
             triple_single = stripped.count("'''")
             
             if triple_double % 2 == 1 or triple_single % 2 == 1:
                 in_multiline_string = not in_multiline_string
-                if in_multiline_string:
-                    continue
-                else:
-                    continue
+                continue
             
             if in_multiline_string:
                 continue
             
+            # 跳过空行（最多保留1个）
             if not stripped:
                 if not prev_blank:
                     optimized_lines.append('')
@@ -136,27 +158,48 @@ class SmartOptimizer:
                 continue
             prev_blank = False
             
+            # 跳过注释行
             content_stripped = stripped.lstrip()
             if content_stripped.startswith('#'):
                 if not any(content_stripped.startswith(x) for x in ['#!/', '# -*-']):
                     continue
             
+            # v2.2: 简化代码
             indent = len(line) - len(line.lstrip())
             content_part = line.lstrip()
-            content_part = re.sub(r'\s+', ' ', content_part)
-            line = ' ' * indent + content_part
             
+            # 简化多余空格
+            content_part = re.sub(r'\s+', ' ', content_part)
+            
+            # v2.2: 更多代码简化规则
+            content_part = re.sub(r'if\s+(\w+)\s*==\s*True\s*:', r'if \1:', content_part)
+            content_part = re.sub(r'if\s+(\w+)\s*==\s*False\s*:', r'if not \1:', content_part)
+            content_part = re.sub(r'if\s+(\w+)\s*!=\s*True\s*:', r'if not \1:', content_part)
+            content_part = re.sub(r'if\s+(\w+)\s*!=\s*False\s*:', r'if \1:', content_part)
+            content_part = re.sub(r'while\s+True\s*:', r'while True:', content_part)
+            content_part = re.sub(r'return\s+None\s*$', 'return', content_part)
+            
+            # 简化布尔表达式
+            content_part = re.sub(r'==\s*None', 'is None', content_part)
+            content_part = re.sub(r'!=\s*None', 'is not None', content_part)
+            
+            # 简化列表/字典空格
+            content_part = re.sub(r'\[\s+', '[', content_part)
+            content_part = re.sub(r'\s+\]', ']', content_part)
+            content_part = re.sub(r'\(\s+', '(', content_part)
+            content_part = re.sub(r'\s+\)', ')', content_part)
+            content_part = re.sub(r'\{\s+', '{', content_part)
+            content_part = re.sub(r'\s+\}', '}', content_part)
+            
+            # 简化逗号后空格
+            content_part = re.sub(r',\s+', ',', content_part)
+            
+            line = ' ' * indent + content_part
             optimized_lines.append(line.rstrip())
         
         content = '\n'.join(optimized_lines)
         
-        content = re.sub(r'return\s+None\s*$', 'return', content, flags=re.MULTILINE)
-        content = re.sub(r'if\s+(\w+)\s*==\s*True\s*:', r'if \1:', content)
-        content = re.sub(r'if\s+(\w+)\s*==\s*False\s*:', r'if not \1:', content)
-        content = re.sub(r'\[\s+', '[', content)
-        content = re.sub(r'\s+\]', ']', content)
-        content = re.sub(r'\{\s+', '{', content)
-        content = re.sub(r'\s+\}', '}', content)
+        # 合并连续空行
         content = re.sub(r'\n{3,}', '\n\n', content)
         
         return content.strip() + '\n'
