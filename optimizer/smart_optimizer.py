@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""智能优化器 v2.3 - 工作流优化增强版"""
+"""智能优化器 v2.7 - 代码突破版"""
 
 import re
 import json
@@ -8,16 +8,16 @@ from typing import Dict, List, Any
 
 
 class SmartOptimizer:
-    """智能优化器 - 执行实际的Token优化操作 (v2.6 激进优化版)"""
+    """智能优化器 - 执行实际的Token优化操作 (v2.10 终极优化版)"""
     
     def __init__(self):
         self.optimization_log = []
-        self._cache = {}  # v2.5: 添加缓存
-        self._compiled_rules = None  # v2.5: 预编译规则
+        self._cache = {}
+        self._compiled_rules = None
         self._init_rules()
     
     def _init_rules(self):
-        """v2.5: 初始化并预编译规则"""
+        """初始化并预编译规则"""
         raw_rules = [
             # 英文冗余
             (r'\b(very|really|quite|rather|pretty)\s+', '', re.IGNORECASE),
@@ -55,7 +55,7 @@ class SmartOptimizer:
             (r'看看|看看看|看看一下', '看'),
             (r'试试|尝试一下', '试'),
             (r'讨论讨论|商议商议', '讨论'),
-            # v2.6 激进优化：单字替换
+            # v2.6 单字替换
             (r'因为|由于|鉴于', '因'),
             (r'所以|因此|于是', '故'),
             (r'但是|然而|可是', '但'),
@@ -76,8 +76,81 @@ class SmartOptimizer:
             (r'内容|内含|包含', '容'),
             (r'信息|消息|资讯', '息'),
             (r'数据|资料|材料', '数'),
+            # v2.8 极简压缩
+            (r'我们|咱们', '吾'),
+            (r'你们|您们', '汝'),
+            (r'他们|她们|它们', '其'),
+            (r'这个|那个', '此'),
+            (r'这里|那里', '此'),
+            (r'这样|那样', '如此'),
+            (r'什么', '何'),
+            (r'怎么', '怎'),
+            (r'为什么', '为何'),
+            (r'怎么样', '如何'),
+            (r'现在', '今'),
+            (r'以前|从前', '昔'),
+            (r'以后|之后', '后'),
+            (r'当时', '当时'),
+            (r'到处|处处', '遍'),
+            (r'非常|十分|很', '甚'),
+            (r'也许|或许|可能', '或'),
+            (r'肯定|一定|必须', '必'),
+            (r'不要|别', '勿'),
+            (r'没有|无', '无'),
+            (r'和|与|同', '及'),
+            (r'的|之', '之'),
+            (r'在|于', '于'),
+            (r'对|对于', '对'),
+            (r'把|将', '将'),
+            (r'被|叫|让', '受'),
+            (r'从|自', '自'),
+            (r'向|往', '向'),
+            (r'为|为了', '为'),
+            (r'给|送', '予'),
+            (r'说|讲|谈', '曰'),
+            (r'看|瞧|望', '视'),
+            (r'听|闻', '闻'),
+            (r'想|思考', '思'),
+            (r'走|行|跑', '行'),
+            (r'来|到', '至'),
+            (r'做|干|搞', '作'),
+            (r'用|使用', '用'),
+            (r'有|拥有', '具'),
+            (r'是|为', '乃'),
+            (r'好|棒|优秀', '佳'),
+            (r'坏|差|糟糕', '劣'),
+            (r'大|巨大', '巨'),
+            (r'小|微小', '微'),
+            (r'多|许多', '众'),
+            (r'少|很少', '寡'),
+            (r'快|迅速', '疾'),
+            (r'慢|缓慢', '缓'),
+            (r'高|很高', '昂'),
+            (r'低|很低', '卑'),
+            (r'新|崭新', '崭'),
+            (r'旧|陈旧', '陈'),
+            (r'长|很长', '冗'),
+            (r'短|很短', '短'),
+            (r'远|遥远', '遥'),
+            (r'近|接近', '近'),
+            (r'开|打开', '启'),
+            (r'关|关闭', '闭'),
+            (r'进|进入', '入'),
+            (r'出|出去', '出'),
+            (r'上|上面', '上'),
+            (r'下|下面', '下'),
+            (r'前|前面', '前'),
+            (r'后|后面', '后'),
+            (r'左|左边', '左'),
+            (r'右|右边', '右'),
+            (r'东|东方', '东'),
+            (r'西|西方', '西'),
+            (r'南|南方', '南'),
+            (r'北|北方', '北'),
+            (r'中|中间', '中'),
+            (r'内|里面', '内'),
+            (r'外|外面', '外'),
         ]
-        # v2.5: 预编译所有正则表达式
         self._compiled_rules = []
         for rule in raw_rules:
             if len(rule) == 3:
@@ -135,20 +208,16 @@ class SmartOptimizer:
         return result
     
     def _optimize_prompt(self, content: str, patterns: List) -> str:
-        """优化提示词 - v2.5 性能优化版"""
-        # v2.5: 使用缓存
+        """优化提示词"""
         cache_key = hash(content)
         if cache_key in self._cache:
             return self._cache[cache_key]
         
-        # v2.5: 使用预编译规则，性能提升50%
         for compiled_pattern, repl in self._compiled_rules:
             content = compiled_pattern.sub(repl, content)
         
-        # 列表格式压缩
         content = re.sub(r'^[•\-\*]\s+', '- ', content, flags=re.MULTILINE)
         
-        # 智能段落合并
         paragraphs = [p.strip() for p in content.split('\n\n') if p.strip()]
         merged_paragraphs = []
         
@@ -159,14 +228,9 @@ class SmartOptimizer:
                 merged_paragraphs.append(p)
         
         content = '\n\n'.join(merged_paragraphs)
-        
-        # 合并连续空行
         content = re.sub(r'\n{3,}', '\n\n', content)
-        
-        # 移除行尾空格
         content = '\n'.join(line.rstrip() for line in content.split('\n'))
         
-        # 句子去重
         sentences = re.split(r'[。！？]', content)
         unique_sentences = []
         seen = set()
@@ -179,12 +243,9 @@ class SmartOptimizer:
         if len(unique_sentences) < len(sentences):
             content = '。'.join(unique_sentences)
         
-        # 标点符号优化
         content = re.sub(r'，\s*，', '，', content)
         content = re.sub(r'。\s*。', '。', content)
         content = re.sub(r'，\s*。', '。', content)
-        
-        # v2.6: 激进优化 - 删除填充词
         content = re.sub(r'\s*的\s*', '的', content)
         content = re.sub(r'\s*了\s*', '了', content)
         content = re.sub(r'\s*是\s*', '是', content)
@@ -192,32 +253,24 @@ class SmartOptimizer:
         
         result = content.strip()
         
-        # v2.5: 存入缓存（限制缓存大小）
         if len(self._cache) < 1000:
             self._cache[cache_key] = result
         
         return result
     
     def _optimize_code(self, content: str, patterns: List) -> str:
-        """优化代码"""
+        """优化代码 - v2.7 代码突破版"""
+        # v2.7: 先删除所有docstring
+        content = re.sub(r'"""[\s\S]*?"""', '', content)
+        content = re.sub(r"'''[\s\S]*?'''", '', content)
+        
         lines = content.split('\n')
         optimized_lines = []
         
         prev_blank = False
-        in_multiline_string = False
         
         for line in lines:
             stripped = line.rstrip()
-            
-            triple_double = stripped.count('"""')
-            triple_single = stripped.count("'''")
-            
-            if triple_double % 2 == 1 or triple_single % 2 == 1:
-                in_multiline_string = not in_multiline_string
-                continue
-            
-            if in_multiline_string:
-                continue
             
             if not stripped:
                 if not prev_blank:
@@ -227,14 +280,20 @@ class SmartOptimizer:
             prev_blank = False
             
             content_stripped = stripped.lstrip()
+            # v2.7: 删除所有注释
             if content_stripped.startswith('#'):
                 if not any(content_stripped.startswith(x) for x in ['#!/', '# -*-']):
                     continue
             
+            # v2.7: 删除行内注释
+            if '#' in content_stripped:
+                content_stripped = content_stripped.split('#')[0].rstrip()
+            
             indent = len(line) - len(line.lstrip())
-            content_part = line.lstrip()
+            content_part = content_stripped
             content_part = re.sub(r'\s+', ' ', content_part)
             
+            # 布尔简化
             content_part = re.sub(r'if\s+(\w+)\s*==\s*True\s*:', r'if \1:', content_part)
             content_part = re.sub(r'if\s+(\w+)\s*==\s*False\s*:', r'if not \1:', content_part)
             content_part = re.sub(r'if\s+(\w+)\s*!=\s*True\s*:', r'if not \1:', content_part)
@@ -242,20 +301,39 @@ class SmartOptimizer:
             content_part = re.sub(r'return\s+None\s*$', 'return', content_part)
             content_part = re.sub(r'==\s*None', 'is None', content_part)
             content_part = re.sub(r'!=\s*None', 'is not None', content_part)
-            content_part = re.sub(r'\[\s+', '[', content_part)
-            content_part = re.sub(r'\s+\]', ']', content_part)
+            
+            # v2.7: len优化
+            content_part = re.sub(r'len\((\w+)\)\s*\>\s*0', r'\1', content_part)
+            content_part = re.sub(r'len\((\w+)\)\s*==\s*0', r'not \1', content_part)
+            content_part = re.sub(r'not\s+not\s+', '', content_part)
+            
+            # v2.7: 赋值简化
+            content_part = re.sub(r'=\s+', '=', content_part)
+            content_part = re.sub(r'\s+=', '=', content_part)
+            
+            # v2.7: 运算符空格
+            content_part = re.sub(r'\+\s+', '+', content_part)
+            content_part = re.sub(r'-\s+', '-', content_part)
+            content_part = re.sub(r'\*\s+', '*', content_part)
+            content_part = re.sub(r'/\s+', '/', content_part)
+            content_part = re.sub(r'%\s+', '%', content_part)
+            
+            # 括号优化
             content_part = re.sub(r'\(\s+', '(', content_part)
             content_part = re.sub(r'\s+\)', ')', content_part)
+            content_part = re.sub(r'\[\s+', '[', content_part)
+            content_part = re.sub(r'\s+\]', ']', content_part)
             content_part = re.sub(r'\{\s+', '{', content_part)
             content_part = re.sub(r'\s+\}', '}', content_part)
             content_part = re.sub(r',\s+', ',', content_part)
             
-            # v2.6 激进代码优化
-            content_part = re.sub(r'len\((\w+)\)\s*>\s*0', r'\1', content_part)
-            content_part = re.sub(r'len\((\w+)\)\s*==\s*0', r'not \1', content_part)
-            content_part = re.sub(r'not\s+not\s+', '', content_part)  # 双重否定
-            content_part = re.sub(r'if\s+(\w+)\s*:\s*\n\s*return\s+True\s*\n\s*return\s+False', r'return bool(\1)', content_part)
-            content_part = re.sub(r'if\s+(\w+)\s*:\s*\n\s*return\s+False\s*\n\s*return\s+True', r'return not \1', content_part)
+            # v2.7: 比较运算符
+            content_part = re.sub(r'\s*\>\s*', '>', content_part)
+            content_part = re.sub(r'\s*\<\s*', '<', content_part)
+            content_part = re.sub(r'\s*\>=\s*', '>=', content_part)
+            content_part = re.sub(r'\s*\<=\s*', '<=', content_part)
+            content_part = re.sub(r'\s*==\s*', '==', content_part)
+            content_part = re.sub(r'\s*!=\s*', '!=', content_part)
             
             line = ' ' * indent + content_part
             optimized_lines.append(line.rstrip())
@@ -266,11 +344,78 @@ class SmartOptimizer:
         return content.strip() + '\n'
     
     def _optimize_workflow(self, content: str, patterns: List) -> str:
-        """优化工作流 - v2.3 增强"""
+        """优化工作流 - v2.9 增强版"""
         try:
             data = json.loads(content)
         except:
+            # 尝试YAML格式
+            try:
+                import yaml
+                data = yaml.safe_load(content)
+            except:
+                return content
+        
+        if not isinstance(data, dict):
             return content
+        
+        # 键名缩写映射
+        key_abbreviations = {
+            'configuration': 'cfg',
+            'parameters': 'params',
+            'description': 'desc',
+            'environment': 'env',
+            'development': 'dev',
+            'production': 'prod',
+            'application': 'app',
+            'database': 'db',
+            'username': 'user',
+            'password': 'pwd',
+            'hostname': 'host',
+            'port': 'port',
+            'timeout': 'to',
+            'retry': 'retry',
+            'enable': 'on',
+            'disable': 'off',
+            'enabled': 'on',
+            'disabled': 'off',
+            'maximum': 'max',
+            'minimum': 'min',
+            'current': 'cur',
+            'previous': 'prev',
+            'next': 'next',
+            'index': 'idx',
+            'count': 'cnt',
+            'number': 'num',
+            'total': 'tot',
+            'average': 'avg',
+            'temporary': 'tmp',
+            'variable': 'var',
+            'function': 'fn',
+            'callback': 'cb',
+            'error': 'err',
+            'message': 'msg',
+            'response': 'res',
+            'request': 'req',
+            'content': 'ct',
+            'default': 'def',
+            'optional': 'opt',
+            'required': 'req',
+            'readonly': 'ro',
+            'writeable': 'rw',
+        }
+        
+        def abbreviate_keys(obj):
+            if isinstance(obj, dict):
+                new_obj = {}
+                for k, v in obj.items():
+                    new_key = key_abbreviations.get(k, k)
+                    new_obj[new_key] = abbreviate_keys(v)
+                return new_obj
+            elif isinstance(obj, list):
+                return [abbreviate_keys(item) for item in obj]
+            return obj
+        
+        data = abbreviate_keys(data)
         
         if 'steps' in data:
             steps = data['steps']
@@ -286,6 +431,12 @@ class SmartOptimizer:
                 if 'name' in step:
                     step['name'] = re.sub(r'^step_|^action_', '', step['name'], flags=re.IGNORECASE)
                 
+                # v2.9: 删除默认值
+                if 'timeout' in step and step['timeout'] in [30, 30000, 60]:
+                    del step['timeout']
+                if 'retry' in step and step['retry'] == 3:
+                    del step['retry']
+                
                 if prev_step and step.get('type') == prev_step.get('type'):
                     if 'config' in step and 'config' in prev_step:
                         prev_step['config'].update(step['config'])
@@ -296,10 +447,10 @@ class SmartOptimizer:
             
             data['steps'] = optimized_steps
         
-        if 'version' in data and data['version'] == '1.0':
+        # 删除全局默认值
+        if 'version' in data and data['version'] in ['1.0', '2.0']:
             del data['version']
-        
-        if 'timeout' in data and data['timeout'] == 30000:
+        if 'timeout' in data and data['timeout'] in [30, 30000, 60]:
             del data['timeout']
         
         return json.dumps(data, separators=(',', ':'), ensure_ascii=False)
